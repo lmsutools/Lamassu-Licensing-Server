@@ -1,27 +1,30 @@
-"use strict";
-const licenseManager = require("./licenseManager");
-const products = new Map;
+const products = {};
 
-function createProduct(c) {
-  products.set(c, []);
-  console.log("Product created: " + c);
+function createProduct(productName) {
+  if (products[productName]) {
+    console.log(`Product ${productName} already exists.`);
+  } else {
+    products[productName] = {
+      name: productName,
+      licenses: {},
+    };
+    console.log(`Product ${productName} created.`);
+  }
 }
 
 function showProducts() {
-  console.log("Product | Number of Active Licenses | Number of Inactive Licenses");
-  products.forEach((c, t) => {
-    let e = 0, o = 0;
-    c.forEach(c => {
-      c = licenseManager.getLicense(c);
-      "Active" === c.status && e++;
-      "Inactive" === c.status && o++;
-    });
-    console.log("Product created: " + t);
-  });
+  console.log("Products:");
+  for (const productName in products) {
+    console.log(`- ${productName}`);
+  }
+}
+
+function getProduct(productName) {
+  return products[productName];
 }
 
 module.exports = {
-  createProduct: createProduct,
-  showProducts: showProducts,
-  products: products,
+  createProduct,
+  showProducts,
+  getProduct,
 };
