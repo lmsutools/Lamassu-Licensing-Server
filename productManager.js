@@ -1,30 +1,24 @@
-const products = {};
-
-function createProduct(productName) {
-  if (products[productName]) {
-    console.log(`Product ${productName} already exists.`);
-  } else {
-    products[productName] = {
-      name: productName,
-      licenses: {},
-    };
-    console.log(`Product ${productName} created.`);
+const uuidv4 = require("uuid").v4,
+  pool = require("./db");
+async function createProduct(r) {
+  try {
+    var o = await pool.getConnection(),
+      e = uuidv4();
+    await o.query("INSERT INTO products (id, name) VALUES (?, ?)", [e, r]), console.log(`Product "${r}" created with ID ${e}.`), o.release()
+  } catch (o) {
+    "ER_DUP_ENTRY" === o.code ? console.error(`Error creating product: Product "${r}" already exists.`) : console.error("Error creating product:", o)
   }
 }
-
-function showProducts() {
-  console.log("Products:");
-  for (const productName in products) {
-    console.log(`- ${productName}`);
+async function showProducts() {
+  try {
+    var o = await pool.getConnection(),
+      r = await o.query("SELECT * FROM products");
+    console.log("All products:"), console.table(r), o.release()
+  } catch (o) {
+    console.error("Error getting products:", o)
   }
 }
-
-function getProduct(productName) {
-  return products[productName];
-}
-
 module.exports = {
-  createProduct,
-  showProducts,
-  getProduct,
+  createProduct: createProduct,
+  showProducts: showProducts
 };
