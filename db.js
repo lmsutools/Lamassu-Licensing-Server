@@ -4,7 +4,7 @@ const mariadb = require("mariadb"),
         user: "admin_license_server",
         password: "admin123",
         database: "licenses_db",
-        connectionLimit: 5,
+        connectionLimit: 20,
         connectionTimeout: 1e4
     });
 module.exports = {

@@ -1,14 +1,24 @@
-const uuidv4 = require("uuid").v4,
-  pool = require("./db");
-async function createProduct(r) {
+const uuidv4 = require("uuid").v4;
+const pool = require("./db");
+
+async function createProduct(productName) {
   try {
-    var o = await pool.getConnection(),
-      e = uuidv4();
-    await o.query("INSERT INTO products (id, name) VALUES (?, ?)", [e, r]), console.log(`Product "${r}" created with ID ${e}.`), o.release()
-  } catch (o) {
-    "ER_DUP_ENTRY" === o.code ? console.error(`Error creating product: Product "${r}" already exists.`) : console.error("Error creating product:", o)
+    const connection = await pool.getConnection();
+    const productId = uuidv4();
+    const creationDate = new Date();
+
+    await connection.query("INSERT INTO products (id, name, creation_date) VALUES (?, ?, ?)", [productId, productName, creationDate]);
+    console.log(`Product "${productName}" created with ID ${productId}.`);
+    connection.release();
+  } catch (err) {
+    if (err.code === "ER_DUP_ENTRY") {
+      console.error(`Error creating product: Product "${productName}" already exists.`);
+    } else {
+      console.error("Error creating product:", err);
+    }
   }
 }
+
 async function showProducts() {
   try {
     var o = await pool.getConnection(),

@@ -1,19 +1,25 @@
 # BASIC FEATURES
+- [x] Feature done
 Extend the licenses and products tables to include activation_date and creation_date columns, which store the dates when a license is activated and created, respectively.
-
+- [ ]
 Implement a scheduled task (e.g., a cron job or a background worker) that automatically changes a license's state to 'expired' once its expiration_date is reached.
 
+- [ ]
+When using generateLicense <product> <days> add the option to select <license_type>
+
+- [x] Feature done
 ## Modify the API endpoint for license activation to check the current state of the license. If the state is anything other than 'inactive', return a response message stating the state of the license (e.g., 'expired').
 In the licenseManager.js module, add a new function called checkLicenseState. This function should take a license key as input, query the database to find the corresponding license, and return an object with the status code and message reflecting the current state of the license (e.g., 'expired').
 Modify the activateLicense function to call the new checkLicenseState function before activating the license. If the state is anything other than 'inactive', return the response message from checkLicenseState without activating the license.
 Update the activateLicenseAPI function in the main.js file to handle the modified activateLicense function's response. If the response status is 200, continue with the activation process. If not, return the response message to the client.
 
-
+- [x] Feature done
 ## If the license to be activated using the API endpoint is already active, return a response with the message "License is already active" and disallow the activation.
-In the licenseManager.js module, update the checkLicenseState function to return an object with the status code and message reflecting the current state of the license. If the state is 'active', return an object with a status code of 400 and a message of "License is already active".
+In the licenseManager.js module, update the <mark>checkLicenseState</mark> function to return an object with the status code and message reflecting the current state of the license. If the state is 'active', return an object with a status code of 400 and a message of "License is already active".
 Modify the activateLicense function to consider the 'active' state returned from the checkLicenseState function. If the state is 'active', return the response message from checkLicenseState without activating the license.
 Update the activateLicenseAPI function in the main.js file to handle the modified activateLicense function's response. If the response status is 200, continue with the activation process. If the status is 400 and the message indicates that the license is already active, return the response message to the client.
 
+- [ ]
 ## Implement a feature that allows license holders to deactivate their licenses. This can be useful in scenarios where they need to transfer the license to another device or user.
 In the licenseManager.js module, add a new function called deactivateLicense. This function should take a license key as input, query the database to find the corresponding license, update its state to 'inactive', and clear the associated machine_id (if applicable). The function should return an object with the status code and message reflecting the result of the deactivation process.
 
@@ -21,11 +27,14 @@ In the main.js file, create a new API endpoint for deactivating licenses, e.g., 
 
 Update the commandHandler.js file to include a new command for deactivating licenses. Add a new case to the switch statement in the handleCommandLine function for the 'deactivateLicense' command, which calls the deactivateLicense function from the licenseManager.js module with the provided license key.
 
+- [x] Feature done
 ## Rate limiting:
 Add rate limiting to the API endpoints to prevent abuse and protect the system from Distributed Denial of Service (DDoS) attacks.
 
+- [ ]
 ## License validation endpoint:
 Add an API endpoint that allows clients to validate their licenses periodically. This can help enforce the licensing restrictions and prevent unauthorized use.
+
 
 # ADVANCED FEATURES
 Support for multiple license types:

@@ -1,14 +1,50 @@
 const uuidv4 = require("uuid").v4,
   pool = require("./db");
-async function generateLicense(e, n) {
-  try {
-    var t, r, a, o, s = await pool.getConnection(),
-      [i] = await s.query("SELECT * FROM products WHERE name = ?", [e]);
-    i ? (t = uuidv4(), r = i.id, a = new Date, (o = new Date(a)).setDate(a.getDate() + n), await s.query("INSERT INTO licenses (license_key, product_id, state, expiration_date) VALUES (?, ?, ?, ?)", [t, r, "inactive", o]), console.log(`License generated for product "${e}" with key ${t} and expiration date ` + o.toISOString()), s.release()) : console.error("Product not found: " + e)
-  } catch (e) {
-    console.error("Error generating license:", e)
+
+
+  async function checkLicenseState(licenseKey) {
+    const connection = await pool.getConnection();
+    const [license] = await connection.query("SELECT * FROM licenses WHERE license_key = ?", [licenseKey]);
+    connection.release();
+  
+    if (license) {
+      return { status: 200, message: license.state };
+    } else {
+      return { status: 404, message: "License not found." };
+    }
   }
-}
+  
+
+  
+
+  async function generateLicense(productName, days) {
+    try {
+      const connection = await pool.getConnection();
+      const [product] = await connection.query("SELECT * FROM products WHERE name = ?", [productName]);
+  
+      if (product) {
+        const licenseKey = uuidv4();
+        const productId = product.id;
+        const creationDate = new Date();
+        let expirationDate = new Date(creationDate);
+        expirationDate.setDate(creationDate.getDate() + days);
+  
+        await connection.query(
+          "INSERT INTO licenses (license_key, product_id, state, expiration_date, creation_date) VALUES (?, ?, ?, ?, ?)",
+          [licenseKey, productId, "inactive", expirationDate, creationDate]
+        );
+  
+        console.log(`License generated for product "${productName}" with key ${licenseKey} and expiration date ` + expirationDate.toISOString());
+        connection.release();
+      } else {
+        console.error("Product not found: " + productName);
+      }
+    } catch (err) {
+      console.error("Error generating license:", err);
+    }
+  }
+
+
 async function getLicense(e) {
   try {
     var n = await pool.getConnection(),
@@ -36,28 +72,35 @@ async function changeLicenseState(e, n) {
     console.error("Error changing license state:", e)
   }
 }
-async function activateLicense(e) {
-  try {
-    var n = await pool.getConnection(),
-      [t] = await n.query("SELECT * FROM licenses WHERE license_key = ?", [e]);
-    if (t) return "active" === t.state ? {
-      status: 200,
-      message: `License ${e} is already active.`
-    } : new Date(t.expiration_date) < new Date ? {
-      status: 400,
-      message: `License ${e} has already expired.`
-    } : (await n.query("UPDATE licenses SET state = ? WHERE license_key = ?", ["active", e]), n.release(), {
-      status: 200,
-      message: `License ${e} activated for product ${t.product_id}.`
-    });
-    throw new Error(`License ${e} not found.`)
-  } catch (e) {
-    return console.error("Error activating license:", e), {
-      status: 400,
-      message: "Error activating license."
-    }
+
+
+async function activateLicense(licenseKey) {
+  const licenseStateResult = await checkLicenseState(licenseKey);
+
+  if (licenseStateResult.status !== 200 || licenseStateResult.message !== "inactive") {
+    return licenseStateResult;
+  }
+
+  const connection = await pool.getConnection();
+  const [license] = await connection.query("SELECT * FROM licenses WHERE license_key = ?", [licenseKey]);
+
+  if (!license) {
+    connection.release();
+    return { status: 404, message: `License ${licenseKey} not found.` };
+  }
+
+  if (new Date(license.expiration_date) < new Date()) {
+    connection.release();
+    return { status: 400, message: `License ${licenseKey} has already expired.` };
+  } else {
+    const activationDate = new Date();
+    await connection.query("UPDATE licenses SET state = ?, activation_date = ? WHERE license_key = ?", ["active", activationDate, licenseKey]);
+    connection.release();
+    return { status: 200, message: `License ${licenseKey} activated for product ${license.product_id}.` };
   }
 }
+
+
 async function getAllLicenses() {
   try {
     var e = await pool.getConnection(),
