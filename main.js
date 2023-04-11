@@ -5,7 +5,7 @@ const handleCommandLine = require("./commandHandler").handleCommandLine;
 const activateLicense = require("./licenseManager").activateLicense;
 const licenseManager = require("./licenseManager");
 const app = express();
-const port = 3001;
+const port = 6000;
 
 // Configure the slow down middleware
 const speedLimiter = slowDown({
@@ -22,6 +22,11 @@ const activateLicenseAPI = async (req, res) => {
   const result = await activateLicense(license);
   res.status(result.status).send(result.message);
 };
+
+// New endpoint for checking server connection
+app.get('/ping', (req, res) => {
+  res.send('pong');
+});
 
 app.get("/api/licenses", async (req, res) => {
   const licenses = await licenseManager.getAllLicenses();
