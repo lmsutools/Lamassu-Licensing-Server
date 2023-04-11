@@ -1,7 +1,3 @@
 node_modules
 *.ai.txt
-<<<<<<< HEAD
 *.env
-=======
-.env
->>>>>>> 090a1e895a04e832b60734606deee3ec80715175
