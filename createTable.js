@@ -1,20 +1,18 @@
-// "file: createTable.js"
-const pool = require("./db");
-
-pool.getConnection().then(conn => {
-  conn.query(`
+const pool=require("./db");
+pool.getConnection().then(e=>{
+  e.query(`
     CREATE TABLE IF NOT EXISTS products (
       id VARCHAR(36) PRIMARY KEY,
       name VARCHAR(50) NOT NULL UNIQUE,
       creation_date DATETIME NOT NULL
     )
-  `).then(() => {
-    console.log("products table created");
-  }).catch(err => {
-    console.error("Error creating products table:", err);
+  `).then(()=>{
+    console.log("products table created")
+  }).catch(e=>{
+    console.error("Error creating products table:",e)
   });
 
-  conn.query(`
+  e.query(`
     CREATE TABLE IF NOT EXISTS licenses (
       id INT PRIMARY KEY AUTO_INCREMENT,
       license_key VARCHAR(36) NOT NULL UNIQUE,
@@ -31,15 +29,16 @@ pool.getConnection().then(conn => {
       current_activations INT,
       notes TEXT,
       machine_id VARCHAR(50),
+      friendly_name VARCHAR(100),
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
     )
-  `).then(() => {
-    console.log("licenses table created");
-  }).catch(err => {
-    console.error("Error creating licenses table:", err);
+  `).then(()=>{
+    console.log("licenses table created")
+  }).catch(e=>{
+    console.error("Error creating licenses table:",e)
   });
 
-  conn.release();
-}).catch(err => {
-  console.error("Error creating tables:", err);
+  e.release()
+}).catch(e=>{
+  console.error("Error creating tables:",e)
 });

@@ -74,13 +74,30 @@ async function changeLicenseState(e, n) {
 }
 
 
-async function activateLicense(licenseKey) {
-  const licenseStateResult = await checkLicenseState(licenseKey);
+async function activateLicense(licenseKey, machineId) {
+  const connection = await pool.getConnection();
+  const [license] = await connection.query("SELECT * FROM licenses WHERE license_key = ?", [licenseKey]);
 
-  if (licenseStateResult.status !== 200 || licenseStateResult.message !== "inactive") {
-    return licenseStateResult;
+  if (license) {
+    if (license.state !== "inactive") {
+      connection.release();
+      return { status: 400, message: `License ${licenseKey} is not inactive.` };
+    } else if (new Date(license.expiration_date) < new Date()) {
+      connection.release();
+      return { status: 400, message: `License ${licenseKey} has already expired.` };
+    } else {
+      const activationDate = new Date();
+      await connection.query("UPDATE licenses SET state = 'active', machine_id = ?, activation_date = ? WHERE license_key = ?", [machineId, activationDate, licenseKey]);
+      connection.release();
+      return { status: 200, message: `License ${licenseKey} activated for product ${license.product_id}.` };
+    }
+  } else {
+    connection.release();
+    return { status: 404, message: `License ${licenseKey} not found.` };
   }
+}
 
+async function deactivateLicense(licenseKey) {
   const connection = await pool.getConnection();
   const [license] = await connection.query("SELECT * FROM licenses WHERE license_key = ?", [licenseKey]);
 
@@ -89,15 +106,15 @@ async function activateLicense(licenseKey) {
     return { status: 404, message: `License ${licenseKey} not found.` };
   }
 
-  if (new Date(license.expiration_date) < new Date()) {
+  if (license.state !== 'active') {
     connection.release();
-    return { status: 400, message: `License ${licenseKey} has already expired.` };
-  } else {
-    const activationDate = new Date();
-    await connection.query("UPDATE licenses SET state = ?, activation_date = ? WHERE license_key = ?", ["active", activationDate, licenseKey]);
-    connection.release();
-    return { status: 200, message: `License ${licenseKey} activated for product ${license.product_id}.` };
+    return { status: 400, message: `License ${licenseKey} is not active.` };
   }
+
+  await connection.query("UPDATE licenses SET state = 'inactive', machine_id = NULL WHERE license_key = ?", [licenseKey]);
+  connection.release();
+
+  return { status: 200, message: `License ${licenseKey} deactivated.` };
 }
 
 
@@ -119,12 +136,20 @@ async function showLicenses(e) {
     console.error("Error getting licenses for product:", e)
   }
 }
+
+const machineIdRegex = /^[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}-[0-9a-zA-Z]{4}$/;
+async function validateMachineId(machineId) {
+  return machineIdRegex.test(machineId);
+}
+
+
 module.exports = {
   generateLicense: generateLicense,
   getLicense: getLicense,
   renovateLicense: renovateLicense,
   changeLicenseState: changeLicenseState,
   activateLicense: activateLicense,
+  deactivateLicense : deactivateLicense,
   getAllLicenses: getAllLicenses,
   showLicenses: showLicenses
 };
